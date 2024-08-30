@@ -1,0 +1,42 @@
+# Ignore bundler config
+/.bundle
+
+# Ignore all logfiles and tempfiles.
+/log/*
+!/log/.keep
+/tmp
+/tmp/*
+
+# Ignore any compiled assets
+/public/assets
+/public/packs
+/public/packs-test
+/public/packs-dev
+
+# Ignore dotenv environment variable files
+.env
+.env.local
+.env.test
+.env.development.local
+.env.production.local
+
+# Ignore the node_modules directory (if you use JavaScript dependencies)
+/node_modules
+
+# Ignore Ruby specific files
+*.rbc
+*.gem
+vendor/bundle
+
+# Ignore Byebug command history file
+.byebug_history
+
+# Ignore MacOS specific files
+.DS_Store
+
+# Ignore IDE or Editor specific files
+.idea/
+.vscode/
+
+# Ignore system files
+*.swp
