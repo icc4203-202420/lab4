@@ -10,7 +10,6 @@ class Backend < Sinatra::Base
   before do
     if request.content_type == 'application/json'
       begin
-        # Leer y parsear el cuerpo de la solicitud solo una vez, sin usar `rewind`
         body = request.body.read
         @request_payload = JSON.parse(body) unless body.empty?
         params.merge!(@request_payload) if @request_payload
@@ -85,7 +84,7 @@ class Backend < Sinatra::Base
 
     user = USERS[email]
     if user && user[:password] == password
-      token = encode_token({ sub: email, exp: (Time.now + 60 * 60).to_i })
+      token = encode_token({ name: USERS[email][:name], sub: email, exp: (Time.now + 60 * 60).to_i })
       { token: token }.to_json
     else
       halt 401, 'Invalid credentials'
@@ -117,6 +116,5 @@ class Backend < Sinatra::Base
     200
   end
 
-  # Inicia la aplicación si se está ejecutando directamente
   run! if app_file == $0
 end

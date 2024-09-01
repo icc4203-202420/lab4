@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import useAxios from 'axios-hooks';
 import useLocalStorageState from 'use-local-storage-state';
-import { Autocomplete, TextField, Button, List, ListItem, ListItemText, Typography } from '@mui/material';
+import { Autocomplete, TextField, Button, List, ListItem, ListItemText, Typography, Box, Container } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import PropTypes from 'prop-types';
 
@@ -46,69 +46,81 @@ const Search = ({ isFavorite, onAddFavorite }) => {
   };
 
   return (
-    <div>
-      <Typography variant="h5" gutterBottom>
-        Búsqueda de Clima
-      </Typography>
-      <Autocomplete
-        freeSolo
-        options={keywordList}
-        value={searchKeywords}
-        onInputChange={handleInputChange}
-        renderInput={(params) => (
-          <TextField {...params} label="Buscar Ciudad" variant="outlined" fullWidth margin="normal" />
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%',
+          mt: 8,
+        }}
+      >
+        <Typography component="h1" variant="h5">
+          Búsqueda de Clima
+        </Typography>
+        <Box sx={{ mt: 2, width: '100%' }}>
+          <Autocomplete
+            freeSolo
+            options={keywordList}
+            value={searchKeywords}
+            onInputChange={handleInputChange}
+            renderInput={(params) => (
+              <TextField {...params} label="Buscar Ciudad" variant="outlined" fullWidth margin="normal" />
+            )}
+          />
+        </Box>
+        <Box sx={{ mt: 3, width: '100%' }}>
+          <Button variant="contained" color="primary" fullWidth onClick={handleSearch}>
+            Buscar
+          </Button>
+        </Box>
+        {loading && (
+          <Typography variant="body1" margin="normal" sx={{ mt: 2 }}>
+            Cargando datos...
+          </Typography>
         )}
-      />
-      <Button variant="contained" color="primary" onClick={handleSearch}>
-        Buscar
-      </Button>
-
-      {loading && (
-        <Typography variant="body1" margin="normal">
-          Cargando datos...
-        </Typography>
-      )}
-
-      {error && (
-        <Typography variant="body1" color="error" margin="normal">
-          Error al cargar los datos.
-        </Typography>
-      )}
-
-      {searchData && (
-        <List>
-          <ListItem>
-            <ListItemText
-              primary={`Ciudad: ${searchData.name}`}
-              secondary={`Temperatura: ${searchData.main.temp} °C`}
-            />
-          </ListItem>        
-          <ListItem>
-            <ListItemText
-              primary={`Mínima: ${searchData.main.temp_min} °C`}
-              secondary={`Máxima: ${searchData.main.temp_max} °C`}
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemText
-              primary={`Humedad: ${searchData.main.humidity}%`}
-              secondary={`Viento: ${searchData.wind.speed} m/s`}
-            />
-          </ListItem>
-          <ListItem>
-            { !isFavorite(searchData.name) && (
-            <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => onAddFavorite(searchData.name)}
-                startIcon={<FavoriteIcon />} 
-              >
-                Agregar al Inicio
-            </Button> )} 
-          </ListItem>
-        </List>
-      )}
-    </div>
+        {error && (
+          <Typography variant="body1" color="error" margin="normal" sx={{ mt: 2 }}>
+            Error al cargar los datos.
+          </Typography>
+        )}
+        {searchData && (
+          <List sx={{ mt: 2, width: '100%' }}>
+            <ListItem>
+              <ListItemText
+                primary={`Ciudad: ${searchData.name}`}
+                secondary={`Temperatura: ${searchData.main.temp} °C`}
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText
+                primary={`Mínima: ${searchData.main.temp_min} °C`}
+                secondary={`Máxima: ${searchData.main.temp_max} °C`}
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText
+                primary={`Humedad: ${searchData.main.humidity}%`}
+                secondary={`Viento: ${searchData.wind.speed} m/s`}
+              />
+            </ListItem>
+            {!isFavorite(searchData.name) && (
+              <ListItem>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => onAddFavorite(searchData.name)}
+                  startIcon={<FavoriteIcon />}
+                >
+                  Agregar al Inicio
+                </Button>
+              </ListItem>
+            )}
+          </List>
+        )}
+      </Box>
+    </Container>
   );
 };
 

@@ -11,6 +11,7 @@ import Home from './components/Home';
 import Search from './components/Search';
 import LoginForm from './components/Login';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
 
 // Definir el reducer para manejar la lista de favoritos
@@ -39,6 +40,7 @@ function App() {
     defaultValue: '',
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState('');
   const [initialFavorites, setInitialFavorites] = useLocalStorageState('WeatherApp/App/Favorites', {
     defaultValue: [],
   });
@@ -60,6 +62,9 @@ function App() {
       })
       .then(() => {
         setIsAuthenticated(true);
+        const decodedToken = jwtDecode(token);
+        setUsername(decodedToken.name);
+
         // Cargar favoritos desde el backend
         return axios.get('/favorites', {
           headers: { Authorization: `Bearer ${token}` },
@@ -95,7 +100,6 @@ function App() {
 
       // Sincronizar con el backend si está autenticado y hay un token válido
       if (isAuthenticated && token) {
-        console.log(JSON.stringify({ favorites: favorites }));
         axios.post('/favorites', { favorites: favorites }, {
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -121,6 +125,7 @@ function App() {
     dispatchFavorites({ type: 'CLEAR_FAVORITES' });
     setToken('');
     setIsAuthenticated(false);
+    setUsername('');
     navigate('/login');
   };
 
@@ -163,12 +168,17 @@ function App() {
             <ListItemText primary="Iniciar Sesión" />
           </ListItem>
         ) : (
-          <ListItem button onClick={() => { handleLogout(); toggleDrawer(); }}>
-            <ListItemIcon>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Cerrar Sesión" />
-          </ListItem>
+          <>
+            <ListItem>
+              <ListItemText primary={`Usuario: ${username}`} />
+            </ListItem>
+            <ListItem button onClick={() => { handleLogout(); toggleDrawer(); }}>
+              <ListItemIcon>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText primary="Cerrar Sesión" />
+            </ListItem>
+          </>
         )}
         <ListItem button component={Link} to="/" onClick={toggleDrawer}>
           <ListItemIcon>
