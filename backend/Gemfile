@@ -1,5 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'sinatra'
+gem 'sinatra-cross_origin'
 gem 'jwt'
 gem 'sinatra-contrib'
+gem "rackup", "~> 2.1"
