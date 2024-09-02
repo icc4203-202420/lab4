@@ -1,6 +1,6 @@
-# Laboratorio 3: Uso de hooks con React y manejo de estado local
+# Laboratorio 4: Autenticación con JSON Web Token (JWT) y Formularios
 
-En este laboratorio continuaremos desarrollando la aplicación de clima con React y MUI. La aplicación utiliza la API de OpenWeather para acceder a información climática.
+En este laboratorio continuaremos desarrollando la aplicación de clima agregando autenticación de usuarios con token JWT, y usando de formularios con Formik y Yup como hemos visto en clases. La aplicación utiliza la API de OpenWeather para acceder a información climática.
 
 ## Pasos iniciales
 
@@ -28,232 +28,137 @@ yarn dev
 
 El comando anterior ejecuta la aplicación en modo de desarrollo. Puedes abrir el navegador web en [http://localhost:5173/](http://localhost:5173/) para ver el funcionamiento.
 
-## Marco Teórico: Hooks en React
+## Marco Teórico: Autenticación con Token JWT y medidas de seguridad
 
-En React 18, los hooks son funciones especiales que permiten gestionar aspectos clave del ciclo de vida de los componentes funcionales, como el estado, los efectos secundarios, y otros comportamientos, de manera simple y eficiente. "Engancharse" a estas características significa que los hooks te permiten insertar lógica en puntos específicos del ciclo de vida de un componente funcional. 
+Hemos visto que las aplicaciones web móviles con arquitectura SPA se integran con uno o más sistemas de backend desde donde consumen servicios (APIs), en nuestro caso, de tipo REST/JSON. Es común la necesidad de autenticar usuarios en nuestras aplicaciones para brindarles funciones privadas y personalizadas. Para esto, debemos permitir que la aplicación frontend requiera autorización para utilizar las APIs del backend. La autorización se logra a través del proceso de autenticación, por ejemplo, mediante un nombre de usuario y una contraseña. Cuando el usuario se autentica correctamente desde la aplicación frontend, esta aplicación puede luego crear, modificar, leer y eliminar recursos cuyo acceso es protegido por el sistema de backend.
 
-**Hook useState**
+Las APIs de tipo REST/JSON se caracterizan por operar sin mantener estado de sesión en el servidor. Se basan directamente en el funcionamiento del protocolo HTTP, el cual no mantiene estado por sí mismo. Esto significa que cada petición a un endpoint de una API REST/JSON debe contener toda la información necesaria para ser procesada. Si se introducen cookies para manejar información de estado, se estaría violando este principio de diseño.
 
-El hook `useState` permite agregar estado a un componente funcional en React. Cuando llamas a `useState`, obtienes una pareja de valores: el estado actual y una función que te permite actualizar ese estado. La ventaja de usar `useState` es que React re-renderiza automáticamente el componente cada vez que el estado cambia, asegurando que la interfaz se actualice correctamente.
+Un método común de autenticación (aunque no el único) para consumir APIs REST/JSON desde nuestras aplicaciones frontend es el uso de JSON Web Tokens (JWTs). Vimos en clases el formato de un token JWT: contiene una cabecera, una carga útil (payload) y una firma. La carga útil incluye el campo `sub` (subject) que contiene un identificador de usuario válido en el backend, y un campo `exp` (timestamp de expiración). Cuando el usuario se autentica exitosamente con la API, por ejemplo, utilizando nombre de usuario y contraseña, el servidor entrega al frontend un token JWT, que luego se envía en cada petición HTTP a la API en una cabecera (header) llamada `Authorization` con el valor `Bearer [Token JWT]`. El frontend comúnmente almacena el token JWT en `localStorage` o `sessionStorage`.
 
-Ejemplo:
+Cuando el frontend almacena el token JWT en localStorage, es una buena práctica validarlo contra el backend en cada uso, ya que, al estar en `localStorage`, cualquier otro código JavaScript que se ejecute en el navegador web podría modificar o sobreescribir el token accidentalmente o con malas intenciones.
 
-```es6
-import React, { useState } from 'react';
+Es importante notar que usar tokens JWT requiere varias medidas de seguridad. Al menos las siguientes se deben tener en consideración:
 
-function Contador() {
-  // Declara una nueva variable de estado, llamada "contador"
-  const [contador, setContador] = useState(0);
+* Configurar correctamente [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) en la aplicación de backend, de manera que sólo se permitan peticiones desde código de frontend cargado desde orígenes conocidos y permitidos.
+* Sin embargo, anterior no previene que puedan ocurrir ataques de Cross-Site Scripting XSS. En estos ataques, el adversario inyecta un código malicioso que se ejecuta en el frontend legítimo. Por ejemplo, si nuestra aplicación de frontend implementa algo como un hilo de comentarios escritos por los usuarios, o un foro, un atacante podría dejar sembrado un código invisible en mensajes del foro, capaz de acceder al token JWT y utilizarlo para realizar peticiones al backend que el usuario no consiente.
+* React es robusto para prevenir lo anterior. Todos los inputs de formularios son debidamente escapados y sanitizados para evitar la inyección de código malicioso en las vistas. Existen, sin embargo, malos usos de React que podrían dar origen a vulnerabilidades. Por ejemplo, existe una función en React llamada `dangerouslySetInnerHTML`, la cual permite modificar el estado de elementos HTML, y evitar la sanitización de valores que hace React. Si se está usando dicha función para actualizar elementos, entonces, un atacante podría llegar a utilizarla para inyectar código malicioso en la aplicación de frontend, capaz de recuperar el token JWT y utilizarlo indebidamente contra el backend.
 
-  return (
-    <div>
-      <p>Has hecho clic {contador} veces</p>
-      <button onClick={() => setContador(contador + 1)}>
-        Haz clic
-      </button>
-    </div>
-  );
-}
+Finalmente, cuando el usuario requiere hacer logout/sign-out, una opción es que el frontend elimine (olvide) el token JWT. De esta manera, cuando el usuario vuelve a acceder a la aplicación, al no encontrar el token en `localStorage` o `sessionStorage`, se redirige al usuario al formulario de login para obtener un nuevo token JWT.
 
-export default Contador;
-```
+Sin embargo, este enfoque permite que un token JWT válido y no expirado pueda ser robado por un tercero, mediante ingeniería social u otras técnicas, y luego ser utilizado por el atacante para suplantar al usuario legítimo en la aplicación. Por esto, es recomendable implementar listas de revocación de tokens JWT en la aplicación backend. Es decir, cuando se realiza una operación de logout/sign-out, el frontend elimina el token, y el backend lo añade a una lista de tokens revocados, invalidando su uso posterior. Los tokens expirados pueden ser eliminados automáticamente de la lista de revocación.
 
-En este ejemplo, `useState(0)` inicializa el estado contador con un valor de 0. Cuando el usuario hace clic en el botón, se llama a `setContador`, lo que incrementa el valor de contador y provoca una re-renderización del componente, actualizando el número de clics mostrados.
+**Biblioteca react-router-dom y hook useNavigate**
 
-**Hook useEffect**
+`react-router-dom` es una biblioteca de enrutamiento para aplicaciones React que permite la navegación entre diferentes vistas o componentes de una Single Page Application (SPA). En lugar de recargar toda la página, `react-router-dom` permite cambiar el contenido visualizado en función de la URL, manteniendo la experiencia del usuario fluida y dinámica.
 
-El hook `useEffect` se utiliza para manejar efectos secundarios en los componentes de React. Esto incluye tareas como la recuperación de datos, la suscripción a servicios, o la manipulación directa del DOM. `useEffect` se ejecuta después de que el componente se haya renderizado y, por defecto, lo hace después de cada actualización. Sin embargo, también puede configurarse para ejecutarse solo cuando cambian ciertos valores.
+Componentes Clave de react-router-dom: 
 
-```es6
-import React, { useState, useEffect } from 'react';
+1. `BrowserRouter`: Envuelve toda la aplicación (ver `main.jsx`) y permite que funcione el enrutamiento basado en la URL del navegador. Utiliza la API de la historia (History API) del navegador para mantener las URLs limpias (sin el # que se ve en otros tipos de enrutadores como `HashRouter`).
 
-function Contador() {
-  const [contador, setContador] = useState(0);
+Es común ver aplicaciones que utilizan `BrowserRouter` en la raíz de su componente principal para habilitar el enrutamiento en toda la aplicación.
 
-  // Hook useEffect para actualizar el título del documento
-  useEffect(() => {
-    document.title = `Has hecho clic ${contador} veces`;
-  }, [contador]); // Solo vuelve a ejecutarse si cambia "contador"
+2. `Routes` y `Route`:
 
-  return (
-    <div>
-      <p>Has hecho clic {contador} veces</p>
-      <button onClick={() => setContador(contador + 1)}>
-        Haz clic
-      </button>
-    </div>
-  );
-}
+`Routes`: Es un contenedor que agrupa diferentes rutas definidas en la aplicación(ver `App.jsx`).
+`Route`: Define una ruta específica en la aplicación. Cada Route tiene un path que corresponde a la URL y un element que es el componente que se renderiza cuando la URL coincide con el path.
 
-export default Contador;
-```
+3. `Link` y `NavLink`:
 
-En este caso, el hook `useEffect` se utiliza para actualizar el título de la página cada vez que cambia el valor de contador. El segundo argumento de `useEffect` es un array de dependencias (`[contador]`), que indica que el efecto solo debe ejecutarse cuando contador cambie, optimizando así el rendimiento.
+`Link`: Es un componente que reemplaza a la etiqueta `<a>` estándar de HTML para navegar entre diferentes rutas dentro de la aplicación sin recargar la página.
+`NavLink`: Similar a `Link`, pero con la capacidad de aplicar estilos o clases CSS adicionales cuando el enlace está activo, es decir, cuando la URL coincide con el path del `NavLink`.
 
-**Hook useReducer**
+Finalmente, el hook `useNavigate` es proporcionado por `react-router-dom` que permite programáticamente cambiar la URL y navegar a diferentes rutas dentro de la aplicación sin necesidad de utilizar enlaces (`Link` o `NavLink`). Es especialmente útil para realizar redirecciones después de ciertas acciones, como el envío de un formulario, o al manejar ciertas condiciones lógicas.
 
-React 18 incluye un hook nativo llamado `useReducer` que permite manejar el estado de un componente de manera más compleja que `useState`. Este hook es ideal cuando el estado de un componente depende de múltiples acciones o cuando el estado es un objeto que requiere cambios basados en una lógica más estructurada por casos. Ejemplo de uso:
+**Construcción de formularios con Formik y Yup**
 
-```es6
-import React, { useReducer } from 'react';
+Hemos visto en clases que construir componentes para implementar formularios en React puede ser bastante tedioso, engorroso e incluso, requerir bastante programación procedural para implementar funcionalidad de validación. Es muy importante tener presente que cuando el frontend envía datos de formulario al backend, es fundamental que el frontend realice validación primero. Esto tiene por lo menos dos efectos positivos; en primer lugar, se da validación instantánea al usuario, y en segundo lugar, se evita enviar al backend peticiones inútiles con datos erróneos. Luego, cuando los datos llegan al backend, es también fundamental que el backend haga validación de los parámetros, e incluso sanitice los parámetros que llegan para evitar ataques como los de inyección de código SQL, _Cross-Site Scripting_, etc.
 
-const initialState = { contador: 0 };
+Dado que el proceso de validación de un formulario en el frontend tiene generalmente siempre los requisitos funcionales, por ejemplo, se debe validar un campo si el usuario se mueve a llenar otro campo, se deben validar todos los campos previo al envío, y finalmente, se deben desplegar en forma consistente los errores, por ejemplo, con mensajes debajo de los elementos de formulario, es claro que toda esta funcionalidad puede ser implementada sin tener que "reinventar la rueda cada vez".
 
-function reducer(state, action) {
-  switch (action.type) {
-    case 'incrementar':
-      return { contador: state.contador + 1 };
-    case 'decrementar':
-      return { contador: state.contador - 1 };
-    default:
-      throw new Error('Acción no soportada');
-  }
-}
+Para desarrollar nuestros formularios con aplicaciones React, es recomendable el uso de los módulos Formik y Yup.
 
-function Contador() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+**Formik** es una biblioteca que simplifica la creación y manejo de formularios en React. Proporciona un conjunto de herramientas y componentes que ayudan a gestionar el estado del formulario, manejar el envío (_submission_) y gestionar la validación. Las principales características de Formik son:
 
-  return (
-    <div>
-      <p>Contador: {state.contador}</p>
-      <button onClick={() => dispatch({ type: 'incrementar' })}>
-        Incrementar
-      </button>
-      <button onClick={() => dispatch({ type: 'decrementar' })}>
-        Decrementar
-      </button>
-    </div>
-  );
-}
+Gestión del estado del formulario: Formik controla automáticamente el estado de los valores de los campos del formulario, errores de validación, y si el formulario ha sido tocado o no. Puedes acceder y manipular el estado del formulario a través de los _props_ proporcionados por Formik.
 
-export default Contador;
-```
+Manejo del envío del formulario: Formik facilita la ejecución de una función de envío cuando el formulario es enviado. También maneja el estado de envío, permitiendo mostrar indicadores de carga u otras interacciones mientras se procesa el envío.
 
-La constante `initialState` define el estado inicial del componente, en este caso, un objeto con una propiedad contador inicializada en 0.
+Compatibilidad con validación de formularios: Formik puede integrar validaciones utilizando funciones de validación manuales o a través de esquemas de validación, como los que proporciona Yup.
 
-Luego, `reducer` es una función que toma _el estado actual y una acción_ como argumentos, y devuelve un nuevo estado basado en el tipo de acción. Aquí, el reducer maneja dos tipos de acciones: incrementar y decrementar.
+Componentes principales de Formik:
 
-El hook `useReducer` se usa para crear el estado y el método `dispatch`, que se utiliza para enviar acciones al reducer. Este hook recibe el reducer y el estado inicial como argumentos.
+- `<Formik>`: Componente que envuelve todo el formulario y gestiona su estado.
+- `<Form>`: Componente que envuelve los campos del formulario y se conecta automáticamente con Formik.
+- `<Field>`: Componente que conecta automáticamente un campo de entrada con el estado de Formik.
+- `<ErrorMessage>`: Componente para mostrar mensajes de error asociados a un campo específico.
 
-La función `dispatch` se utiliza para enviar acciones al reducer. Cuando se hace clic en los botones, se envían acciones con los tipos incrementar o decrementar, lo que provoca que el estado se actualice de acuerdo con la lógica definida en el reducer.
+**Yup**  
 
-Este ejemplo es de juguete, pero a medida que las aplicaciones y los componentes se van haciendo más complejos en términos del estado que deben manejar, el uso de reducers hace que el código se vuelva más fácil de mantener y depurar. Con reducers todas las actualizaciones a una variable de estado pasan por definir todos los casos posibles de modificación de estado y cubrir correctamente esos casos.
+Yup es una biblioteca de validación de esquemas que se usa a menudo junto con Formik para definir reglas de validación claras y reutilizables para formularios. Las características principales de Yup son las siguientes:
 
-**Bibliotecas de Hooks: Caso de Axios**
+Definición de esquemas de validación: Yup permite definir esquemas de validación detallados, como tipos de datos (string, number, etc.), validaciones de campo (email, required, etc.), y relaciones entre campos (por ejemplo, un campo debe coincidir con otro).
 
-Además de los hooks nativos, existen bibliotecas de terceros que extienden la funcionalidad de React ofreciendo hooks personalizados que facilitan tareas comunes. Por ejemplo, `axios-hooks` es una biblioteca que proporciona hooks específicos para hacer solicitudes HTTP con Axios en React. Este hook simplifica la lógica de recuperación de datos y manejo de estados de carga o error en componentes funcionales. Ejemplo:
+Validación declarativa: En lugar de escribir funciones de validación personalizadas, con Yup puedes declarar las reglas de validación de manera concisa y reutilizable.
+
+Integración con Formik: Yup se integra fácilmente con Formik para realizar validaciones basadas en esquemas. Formik usará automáticamente el esquema Yup para validar los valores del formulario antes de enviar los datos.
+
+El siguiente código ejemplifica cómo Formik y Yup pueden usarse conjuntamente para construcción y validación de formularios:
 
 ```es6
 import React from 'react';
-import useAxios from 'axios-hooks';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
 
-function ListaUsuarios() {
-  const [{ data, loading, error }] = useAxios('https://api.example.com/users');
+const validationSchema = Yup.object({
+  email: Yup.string().email('Invalid email format').required('Required'),
+  password: Yup.string().min(6, 'Password too short').required('Required'),
+});
 
-  if (loading) return <p>Cargando...</p>;
-  if (error) return <p>Error al cargar los datos.</p>;
-
+function MyForm() {
   return (
-    <ul>
-      {data.map(user => (
-        <li key={user.id}>{user.name}</li>
-      ))}
-    </ul>
+    <Formik
+      initialValues={{ email: '', password: '' }}
+      validationSchema={validationSchema}
+      onSubmit={(values) => {
+        console.log('Form data', values);
+      }}
+    >
+      {({ isSubmitting }) => (
+        <Form>
+          <label htmlFor="email">Email:</label>
+          <Field id="email" name="email" type="email" />
+          <ErrorMessage name="email" component="div" />
+
+          <label htmlFor="password">Password:</label>
+          <Field id="password" name="password" type="password" />
+          <ErrorMessage name="password" component="div" />
+
+          <button type="submit" disabled={isSubmitting}>
+            Submit
+          </button>
+        </Form>
+      )}
+    </Formik>
   );
 }
 
-export default ListaUsuarios;
+export default MyForm;
 ```
 
-En este ejemplo, `useAxios` gestiona automáticamente los estados de carga (`loading`) y error (`error`). Así, los desarrolladores pueden enfocarse en la lógica de presentación sin preocuparse por las complejidades de la solicitud HTTP.
+Debe tenerse presente que es enteramente posible utilizar componentes de MUI para construir el formulario, integrando Formik y Yup. Esto lo hemos visto en los ejemplos de la clase anterior a este laboratorio.
 
-Para instalar `axios-hooks` en un proyecto usando Yarn, basta ejecutar:
+Para mayores detalles sobre cómo usar Formik y Yup, recomendamos revisar la documentación correspondiente a cada uno:
 
-```sh
-yarn add axios-hooks
-```
-
-En este proyecto, el módulo ya está incorporado en `package.json`.
-
-**Uso de Local Storage con Hooks**
-
-Hemos visto en clases, y en la lectura del libro The Road to React, la existencia y el uso de la API de _Local Storage_, la cual está disponible en [sobre el 90%](https://caniuse.com/?search=localstorage) de los dispositivos móviles actuales. Para utilizar _Local Storage_ con React, es recomendable hacerlo a través de un módulo que provee un hook para ello, llamado  
-`use-local-storage-state`, el cual puede ser instalado en un proyecto con:
-
-```sh
-yarn add use-local-storage-state
-```
-
-Ejemplo de uso:
-
-```es6
-import React from 'react';
-import useLocalStorageState from 'use-local-storage-state';
-
-function ContadorConLocalStorage() {
-  const [contador, setContador] = useLocalStorageState('contador', 0);
-
-  return (
-    <div>
-      <p>Contador: {contador}</p>
-      <button onClick={() => setContador(contador + 1)}>
-        Incrementar
-      </button>
-      <button onClick={() => setContador(0)}>
-        Reiniciar
-      </button>
-    </div>
-  );
-}
-
-export default ContadorConLocalStorage;
-```
-
-El hook `useLocalStorageState` se utiliza en lugar de `useState` para crear una variable de estado que se sincroniza automáticamente con `localStorage`. Al pasar la clave `contador` como primer argumento, el valor de contador se almacena en `localStorage` bajo esa clave.
-
-Cada vez que se actualiza el valor de `contador`, también se actualiza el valor almacenado en `localStorage`. Si el usuario recarga la página o vuelve a ella más tarde, el contador comenzará desde el valor que estaba en `localStorage` en lugar de resetearse.
-
-Es importante notar que las claves guardadas en `localStorage` pueden colisionar entre aplicaciones distintas si no se toman precauciones. Por ejemplo, la clave `contador` es demasiado genérica y perfectamente podría ser utilizada en diferentes aplicaciones, con efectos no deseados, e incluso dañinos. Hay buenas prácticas para prevenir esto:
-
-Uso de prefijos en las claves: Usar prefijos únicos para las claves en `localStorage` es una de las prácticas más comunes. Esto asegura que las claves sean únicas dentro del ámbito de tu aplicación, incluso si se usan nombres genéricos como `contador`. El prefijo podría incluir el nombre de la aplicación, el módulo, o alguna otra identificación única.
-
-Ejemplo:
-
-```es6
-const [contador, setContador] = useLocalStorageState('miApp-contador', 0);
-```
-
-En este caso, `miApp-contador` se utiliza como clave en `localStorage`, lo que reduce el riesgo de colisiones con otras aplicaciones.
-
-Uso de espacios de nombre (namespaces): Otra buena práctica es utilizar espacios de nombres o nombres jerárquicos. Esto es útil si tienes múltiples módulos o funcionalidades que necesitan almacenar datos en `localStorage`. Puedes estructurar las claves de manera jerárquica para organizar mejor los datos. Ejemplo:
-
-```es6
-const [contador, setContador] = useLocalStorageState('miApp/moduloA/contador', 0);
-```
-
-Este esquema de clave `miApp/moduloA/contador` asegura que la clave es específica a un módulo dentro de la aplicación, minimizando las posibilidades de colisión.
-
-Uso de identificadores únicos: En algunos casos, podrías querer incluir identificadores únicos, como el ID de un usuario o el identificador de una sesión, en las claves. Esto es útil en aplicaciones que manejan múltiples usuarios o sesiones simultáneas. Ejemplo:
-
-```es6
-const userId = 'user123';
-const [contador, setContador] = useLocalStorageState(`miApp/${userId}/contador`, 0);
-```
-
-Aquí, la clave `miApp/user123/contador` asegura que el estado es específico al usuario actual.
-
-Es importante mantener una convención clara y consistente para nombrar las claves en `localStorage` a lo largo de la aplicación. Documentar estas convenciones ayudará a todos los desarrolladores en el equipo a seguir las mismas prácticas, reduciendo aún más la posibilidad de errores.
-
-Por último, implementar validaciones y manejo de errores al interactuar con `localStorage` es una buena práctica para manejar situaciones inesperadas, como la falta de espacio o acceso denegado. También es recomendable comprobar que los valores obtenidos desde localStorage tienen el formato esperado.
-
-```es6
-const storedValue = localStorage.getItem('miApp-contador');
-const contador = storedValue ? JSON.parse(storedValue) : 0;
-```
+* API reference de Formik: [https://formik.org/docs/api/formik](https://formik.org/docs/api/formik)
+* Yup: documentación en página README de GitHub: [https://github.com/jquense/yup?tab=readme-ov-file](https://github.com/jquense/yup?tab=readme-ov-file)
 
 ## Descripción de la Aplicación React
 
-Nuestra aplicación React en su segunda iteración ha crecido en funcionalidad. Permite buscar ubicaciones geográficas para realizar seguimiento del clima, y guardar ubicaciones favoritas. Para esto utiliza hooks de React nombrados arriba, `localStorage` y algunos componentes adicionales de MUI.
+Nuestra aplicación React en su tercera iteración ha crecido en funcionalidad. Ahora permite contar con cuentas de usuario, aunque ficticias, con finalidad de demostrar un formulario de login, y el manejo de token JWT. Al contar con un backend, las lista de ubicaciones favoritas de los usuarios para la información de clima puede quedar "persistida" allí. Veremos en este laboratorio que el backend es muy simple y no usa una base de datos, de hecho, mantiene los datos en memoria y estos se reestablecen a sus valores originales cada vez que el backend se reinicia. Sin embargo, es posible verificar dos aspectos interesantes respecto al frontend:
+
+* La aplicación de frontend puede continuar funcionando en el browser si el backend se cierra, debido a que la información de ubicaciones favoritas del usuario actual se mantiene en local storage, y además, la información de clima es provista por un serivicio diferente (OpenWeatherMap). 
+* Una aplicación de frontend puede acceder a APIs de distintos proveedores, e incluso APIs alojadas en distintos sistemas de backend.
 
 ### Componentes de la Aplicación
 
@@ -317,8 +222,6 @@ En este componente hay dos hooks de React relevantes que son instanciados:
 
 ## Experimenta con el código
 
-1. En el componente `Search` puedes agregar un botón para limpiar el historial de búsqueda, el cual aparezca desplegado únicamente si hay contenido en la lista de resultados guardada en local storage.
-2. 
 
 
 ## Anexo: Lo básico de Vite
