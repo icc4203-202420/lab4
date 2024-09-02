@@ -91,18 +91,21 @@ class Backend < Sinatra::Base
     end
   end
 
-  post '/favorites' do
+  # Maneja tanto PUT como POST en /favorites
+  put '/favorites' do
     protected!
     user = authorized_user
 
     if params[:favorites]
       user[:favorites] = params[:favorites]
       puts "User #{user[:name]} updated favorites to: #{user[:favorites]}"
+      status 200
     else
-      puts "No valid favorites received"
-      puts "User #{user[:name]} tried to update favorites with invalid data"
+      halt 400, 'No valid favorites received'
     end
   end
+
+  post '/favorites', &self.method(:put_favorites)
 
   get '/favorites' do
     protected!

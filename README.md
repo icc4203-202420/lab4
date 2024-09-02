@@ -2,13 +2,24 @@
 
 En este laboratorio continuaremos desarrollando la aplicación de clima agregando autenticación de usuarios con token JWT, y usando de formularios con Formik y Yup como hemos visto en clases. La aplicación utiliza la API de OpenWeather para acceder a información climática.
 
-## Pasos iniciales
+Ahora nuestra aplicación se compone por el frontend que ya conocemos (ahora bajo el directorio `/frontend`), desarrollado con React y Vite, a lo cual hemos agregado un backend desarrollado con Sinatra (en el directorio `/backend`). Sinatra una biblioteca para ruby que permite desarrollar aplicaciones web o APIs ligeras. El backend desarrollado con Sinatra lo utilizamos para implementar una API simple que permite a los usuarios del frontend autenticarse para obtener un token JWT, y luego llamar servicios que permiten recuperar y actualizar la lista de ubicaciones favoritas para consultar la información de clima.
 
-Para este laboratorio debes contar con una cuenta en OpenWeather, a través del portal openweathermap.org. Puedes usar para esto tu correo personal o institucional. Luego, ingresando al portal de OpenWeather, puedes pinchar en el menú en donde aparece tu login arriba a la derecha en la _top bar_ del sitio, y allí acceder a la opción "My API keys". Ingresando allí, verás la API Key que OpenWeather ha creado automáticamente para tu uso gratuito (máximo 1000 consultas diarias).
+## Pasos iniciales (OJO: Se debe actualizar .env)
 
-A continuación, crea un archivo llamado `.env` en el directorio raíz de este repositorio. En dicho archivo ingresa el siguiente texto:
+Si ya cuentas con el archivo `/frontend/.env` que hemos utilizado en laboratorios pasados, entonces, debes añadir una variable de entorno que permita a la aplicación de frontend saber a qué backend conectarse.
 
 ```sh
+VITE_BACKEND_URL="http://localhost:4567"
+```
+
+Esto es en general una práctica común en desarrollo. Recuerda que `yarn build` en el proyecto del frontend compilará todo el código del frontend y sustituirá todas las ocurrencias de la variable `VITE_BACKEND_URL` por su valor literal, `http://localhost:4567`. Por lo tanto, es sumamente importante que la dirección del backend nunca la "hardcodees". Es decir, jamás escribir `http://localhost:4567` en el código Javascript, usa en vez de eso una variable de entorno como `VITE_BACKEND_URL`. Así, la URL de backend puede ser incorporada al código de producción del frontend en tiempo flexible durante la compilación.
+
+Luego, si no has configurado la API key de OpenWeatherMap, puedes hacerlo también ahora. Para obtener una API key y agregarla, te recordamos los pasos. Primero, debes obtener la API key de OpenWeatherMap. Puedes usar para esto tu correo personal o institucional. Luego, ingresando al portal de OpenWeather, puedes pinchar en el menú en donde aparece tu login arriba a la derecha en la _top bar_ del sitio, y allí acceder a la opción "My API keys". Ingresando allí, verás la API Key que OpenWeather ha creado automáticamente para tu uso gratuito (máximo 1000 consultas diarias).
+
+Actualiza el archivo `.env` en el directorio `/frontend` de este repositorio para contener las líneas de configuración siguientes:
+
+```sh
+VITE_BACKEND_URL="http://localhost:4567"
 VITE_OPENWEATHER_API_KEY=#[copia y pega aquí la API Key y elimina los corchetes y el caracter gato]
 ```
 
@@ -27,6 +38,12 @@ yarn dev
 ```
 
 El comando anterior ejecuta la aplicación en modo de desarrollo. Puedes abrir el navegador web en [http://localhost:5173/](http://localhost:5173/) para ver el funcionamiento.
+
+Finalmente, puedes iniciar la aplicación del backend. Para esto, debes ir al directorio `/backend`, y allí ejecutar:
+
+```sh
+bundle exec ruby app.rb
+```
 
 ## Marco Teórico: Autenticación con Token JWT y medidas de seguridad
 
@@ -78,7 +95,7 @@ Dado que el proceso de validación de un formulario en el frontend tiene general
 
 Para desarrollar nuestros formularios con aplicaciones React, es recomendable el uso de los módulos Formik y Yup.
 
-**Formik** es una biblioteca que simplifica la creación y manejo de formularios en React. Proporciona un conjunto de herramientas y componentes que ayudan a gestionar el estado del formulario, manejar el envío (_submission_) y gestionar la validación. Las principales características de Formik son:
+Formik es una biblioteca que simplifica la creación y manejo de formularios en React. Proporciona un conjunto de herramientas y componentes que ayudan a gestionar el estado del formulario, manejar el envío (_submission_) y gestionar la validación. Las principales características de Formik son:
 
 Gestión del estado del formulario: Formik controla automáticamente el estado de los valores de los campos del formulario, errores de validación, y si el formulario ha sido tocado o no. Puedes acceder y manipular el estado del formulario a través de los _props_ proporcionados por Formik.
 
@@ -93,9 +110,7 @@ Componentes principales de Formik:
 - `<Field>`: Componente que conecta automáticamente un campo de entrada con el estado de Formik.
 - `<ErrorMessage>`: Componente para mostrar mensajes de error asociados a un campo específico.
 
-**Yup**  
-
-Yup es una biblioteca de validación de esquemas que se usa a menudo junto con Formik para definir reglas de validación claras y reutilizables para formularios. Las características principales de Yup son las siguientes:
+Yup es una biblioteca de validación de esquemas que se usa con frecuencia junto con Formik para definir reglas de validación claras y reutilizables para formularios. Las características principales de Yup son las siguientes:
 
 Definición de esquemas de validación: Yup permite definir esquemas de validación detallados, como tipos de datos (string, number, etc.), validaciones de campo (email, required, etc.), y relaciones entre campos (por ejemplo, un campo debe coincidir con otro).
 
@@ -185,15 +200,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 );
 ```
 
+No hay cambios en esta parte de la aplicación desde el laboratorio anterior.
+
 **Theme de MUI**
 
 Existe un _theme_ de MUI (Material UI) configurado para la aplicación que se encuentra descrito en `src/theme.js`. Es posible variar la tipografía Roboto utilizada en la aplicación, el esquema de colores, y en general alterar todas las propiedades personalizables de los componentes de MUI.
 
 El componente `ThemeProvider` decora `App` con el _theme_ cargado en el propio archivo `main.jsx`.
 
+Los estilos de MUI no han sido modificados desde el laboratorio anterior.
+
 **BrowserRouter**
 
-Luego, hay un componente `BrowserRouter`, provisto por React, que permite que la aplicación de frontend pueda tener sus propios enlaces (hipervínculos) locales, y procesar los paths que hay en la barra de direcciones del navegador interpretándolos en el contexto local del frontend. Los enlaces permiten acceder a distintos componentes de la aplicación que quedan instanciados por el componente `App`. 
+Esta aplicación siempre ha usado el componente `BrowserRouter`, provisto por React, sobre el cual hemos provisto algo más de detalles en el marco teórico. Permite que la aplicación de frontend pueda tener sus propios enlaces (hipervínculos) locales, y procesar los paths que hay en la barra de direcciones del navegador interpretándolos en el contexto local del frontend. Los enlaces permiten acceder a distintos componentes de la aplicación que quedan instanciados por el componente `App`.
 
 **React.StrictMode**
 
@@ -203,26 +222,143 @@ Finalmente `React.StrictMode` permite comunicar advertencias o errores al desarr
 
 El archivo `App.jsx` declara el componente principal de la aplicación `App`, junto con componentes que se instancian cuando se está en la ruta raíz `/` (`Home`) y en la ruta `/search` (`Search`). 
 
-El componente `App` maneja una única variable de estado con el hook de _state_, que permite alternar la vista del menú de navegación, haciendo click en el botón que se encuentra en la barra superior (ver `AppBar` y uso de la variable de estado `toggleDrawer`).
+El componente `App` maneja varias variables de estado con el hook de _state_. La variable `drawerOpen` permite alternar la vista del menú de navegación, haciendo click en el botón que se encuentra en la barra superior (ver `AppBar` y uso de la variable de estado `toggleDrawer`).
 
-El menú de navegación está construido con un componente tipo `List` de React que permite que los ítemes queden enlazados a otros componentes; `Home` y `Search`.
+La variable `isAuthenticated` determina si el usuario se ha autenticado con el backend. La variable `username` contiene el nombre del usuario autenticado (o string vacío). La variable `loading` se utiliza para la carga inicial del componente, y para controlar la inicialización de la lista de ubicaciones favoritas. 
+
+Existe un efecto configurado que rastrea cambios a `favorites`, `isAuthenticated`, `token` y `loading`. El propósito de este efecto es actualizar la lista de favoritos en el backend cuando ésta cambia localmente, es decir, realiza sincronización automática de la lista cuando hay cambios.
+
+El menú de navegación está construido con un componente tipo `List` de React que permite que los ítemes queden enlazados a otros componentes; `Home` y `Search`. Se ha añadido despliegue condicional de enlaces de inicio y cierre de sesión al sidebar, jjunto con el nombre del usuario que se encuentra autenticado.
 
 En las líneas finales de `App.jsx` se encuentra el componente `Routes` que en forma análoga a `routes.rb` en el backend de la aplicación Rails, define una lista de rutas que son válidas para la aplicación que se ejecuta en el _frontend_.
 
+**Componente LoginForm**
+
+Este es un nuevo componente en la aplicación que permite al usuario autenticarse con nombre de usuario (email) y contraseña. Hay dos cuentas de usuario creadas en el backend: 
+
+* user1@miuandes.cl, password1
+* user2@miuandes.cl, password2
+
+Es posible ver que el componente define un esquema de validación con Yup para los campos de email y password.
+
+Además, es posible ver que el componente usa el hook `useNavigate` de `react-router-dom` para cambiar el componente activo de la aplicación cuando ocurre una autenticación exitosa.
+
+El componente `LoginForm` define un hook de axios, mediante el cual envía los campos del formulario al backend. Los campos van al backend en formato `application/x-www-form-urlencoded` en este caso. Este es el [formato "tradicional"](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST) en que los browsers codifican los datos que provienen de un formulario HTML para enviarlos al servidor. Los datos, sin embargo, podrían ir serializados al backend como un objeto en formato JSON.
+
+Cuando la autenticación es exitosa, la función `handleSubmit` llama a `tokenHandler`, handler que es implementado en el componente `App`, pues el diseño es tal que solamente el componente `App` modifica el estado del token JWT en local storage.
+
+Finalmente, es posible ver que el formulario de login utiliza componentes de material UI, y aparece anidado con Formik. Formik usa el esquema de validación definido al inicio del archivo `Login.jsx`:
+
+```es6
+const validationSchema = Yup.object({
+  email: Yup.string().email('Email no válido').required('El email es requerido'),
+  password: Yup.string().required('La contraseña es requerida').min(6, 'La contraseña debe tener al menos 6 caracteres'),
+});
+```
+
 **Componente Home**
 
-El componente `Home` incluye algunos componentes de MUI, como el de [`Card`](https://mui.com/material-ui/react-card/) y `CardContent`. Sin embargo, el propósito de `Card` es proveer un área en la cual instanciar el componente `Weather` que realiza las acciones relevantes en nuestra aplicación.
+El componente `Home` no ha cambiado desde el laboratorio anterior. Incluye algunos componentes de MUI, como el de [`Card`](https://mui.com/material-ui/react-card/) y `CardContent`. Sin embargo, el propósito de `Card` es proveer un área en la cual instanciar el componente `Weather` que realiza las acciones relevantes en nuestra aplicación.
 
 **Componente Weather**
 
-En este componente hay dos hooks de React relevantes que son instanciados:
+Este componente también se ha mantenido sin cambios desde el laboratorio anterior. Recordemos que hay dos hooks de React relevantes que son instanciados:
 
 * `state` (variable `weather`): Esta variable contiene el objeto actual de clima cargado mediante la API de OpenWeather.
 * `effect`: Este hook que no recibe ningún objeto para vigilar en su arreglo de argumentos, y ejecuta _automáticamente y una sola vez cuando se termina de renderizar_ el componente `Weather`. La función asíncrona que ejecuta el hook es `fetchWeather`. Podemos ver en ella las llamadas a la API remota y el procesamiento de resultados.
 
+## Descripción de la Aplicación de Backend
+
+La aplicación de backend se encuentra desarrollada con Sinatra. El código principal de esta aplicación se encuentra en `backend/app.rb`.
+
+**Procesamiento del contenido de peticiones**
+
+El código en este archivo configura varios aspectos de la aplicación previo al código de los _endpoints_ de API. En primer lugar, se realiza un pre-procesamiento del contenido del request, de manera que si hay datos que vienen en JSON, se incorporan a la estructura `params` (similar a la utilizada en Rails) que permite mantener todos los parámetros que llegan desde la petición (_request_).
+
+**Configuración de CORS**
+
+Luego, se configura CORS para permitir llamadas a la API desde la aplicación de frontend que estamos usando, y tener la posibilidad de bloquear o excluir llamadas a la API desde aplicaciones servidas desde orígenes no permitidos. Esto está en dos partes:
+
+```ruby
+  configure do
+    enable :cross_origin
+  end
+```
+
+Lo anterior activa CORS en Sinatra. Luego tenemos:
+
+```ruby
+  options '*' do
+    response.headers['Allow'] = 'HEAD,GET,POST,PUT,PATCH,DELETE,OPTIONS'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'HEAD,GET,POST,PUT,PATCH,DELETE,OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, Accept'
+    200
+  end
+```
+
+Este código permite responder a peticiones de tipo `OPTIONS` de HTTP. El mensaje `OPTIONS` en HTTP sirve para que un cliente pueda conocer las capacidades del servidor, como los métodos HTTP que admite para un recurso específico, y también es usado en el contexto de CORS (Cross-Origin Resource Sharing) para gestionar las solicitudes de origen cruzado. Un cliente puede enviar una solicitud `OPTIONS` a un servidor para averiguar qué métodos HTTP (como `GET`, `POST`, `PUT`, `DELETE`, etc.) están permitidos para un recurso en particular antes de intentar realizar una acción.
+
+En CORS, un navegador envía una solicitud `OPTIONS` antes de realizar una solicitud HTTP real cuando una solicitud es considerada "compleja" (por ejemplo, cuando se usan métodos como `PUT` o `DELETE`, o se envían ciertos encabezados personalizados). Esta solicitud de verificación previa se llama "_preflight_" y se utiliza para verificar que el servidor permitirá la solicitud real.
+
+En nuestro caso, el procesamiento de `OPTIONS` en Sinatra está configurado con comodín (`*`), por lo tanto, la configuración aplica a todas las rutas de la aplicación. Hay en el código que genera respuestas a `OPTIONS` las siguientes cabeceras:
+
+- `Allow`: Es utilizada para informar a los clientes sobre los métodos HTTP permitidos para el recurso solicitado. Aquí, se especifica que los métodos permitidos son `HEAD`, `GET`, `POST`, `PUT`, `PATCH`, `DELETE` y `OPTIONS`.
+- `Access-Control-Allow-Origin`: Especifica qué orígenes están permitidos para realizar solicitudes. El valor '*' permite solicitudes desde cualquier origen, lo cual es útil en escenarios de CORS cuando se desea permitir acceso desde cualquier dominio.
+- `Access-Control-Allow-Methods`: Especifica los métodos HTTP permitidos en las solicitudes del lado del cliente. Aquí se lista una serie de métodos que el servidor acepta, en línea con lo que se especifica en el encabezado Allow.
+- `Access-Control-Allow-Headers`: Indica qué encabezados HTTP pueden ser utilizados durante la solicitud real que sigue a la solicitud OPTIONS. En este caso, se permite Authorization, Content-Type y Accept.
+- Código de estado 200: Finalmente, la respuesta a la solicitud `OPTIONS` se devuelve con un estado 200 OK, indicando que la solicitud fue exitosa.
+
+**Helpers**
+
+El backend implementa unas funciones de ayuda (`helpers`) que permiten codificar y decodificar los tokens JWT, permiten autorizar usuarios (`authorized_user`), verificar si los usuarios están autorizados (`authorized?`), y controlar el acceso de usuarios a endpoints (`protected`).
+
+**Endpoints del backend**
+
+Los endpoints que el backend implementa sirven para incorporar nuestras funciones de inicio y cierre de sesión desde el frontend, así como también para obtener y actualizar la lista de ubicaciones favoritas para consultar la información climática:
+
+- `POST /login`: Endpoint que realiza el proceso de autenticación y generación de token JWT.
+- `PUT /favorites` y `POST /favorites`: Permiten actualizar y crear la lista de favoritos.
+- `GET /favorites` devuelve la lista de favoritos del usuario autorizado.
+- `GET /verify_token` permite determinar si el usuario está debidamente autorizado (si el token JWT es válido).
+
+**Datos en el backend**
+
+Como habrás podido ver, el backend no opera con una base de datos real. Más bien, mantiene los datos de cuentas de usuario en memoria. Esto quiere decir que si el servidor se reinicia, los cambios a los datos originales se pierden.
+
+```es6
+  USERS = {
+    "user1@miuandes.cl" => {
+      name: "Juan",
+      password: "password1",
+      favorites: ['Talca', 'Arica', 'Calama']
+    },
+    "user2@miuandes.cl" => {
+      name: "Pedro",
+      password: "password2",
+      favorites: ['Temuco', 'Valdivia', 'Coyhaique']
+    }
+  }
+```
+
 ## Experimenta con el código
 
+1. Modifica `LoginForm` para mejorar el manejo de errores. Puedes inspirarte en el ejemplo que vimos en la clase, en donde usábamos componentes de tipo `<ErrorMessage>` de Formik. Con esto podrás simplificar considerablemente el código del formulario, sin tener que poner atributos `error` y `helperText` en los componentes de tipo `<Field>`. Ejemplo:
 
+```es6
+  <Field
+    as={TextField}
+    name="email"
+    type="email"
+    label="Email"
+    fullWidth
+    margin="normal"
+    variant="outlined"
+  />
+  <ErrorMessage name="email" component="div" style={{ color: 'red' }} />
+```
+2. Implementa un componente `RegistrationForm` que permita crear una nueva cuenta de usuario e iniciar sesión con ella. Para esto, tendrás que agregar un endpoint al backend, e integrar `RegistrationForm` con `App`. Recuerda que `App` es dueña de los tokens JWT, por lo tanto, `App` tiene que pasar a `RegistrationForm` un handler vía `props`, similar a lo que ocurre con `LoginForm`.
+3. En el formulario implementado por `RegistrationForm`, asegúrate de pedir la contraseña junto con la confirmación de la misma, y verificar que los campos sean iguales. Investiga cómo hacer esto con Yup y Formik.
 
 ## Anexo: Lo básico de Vite
 
