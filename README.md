@@ -9,7 +9,7 @@ Ahora nuestra aplicación se compone por el frontend que ya conocemos (ahora baj
 Si ya cuentas con el archivo `/frontend/.env` que hemos utilizado en laboratorios pasados, entonces, debes añadir una variable de entorno que permita a la aplicación de frontend saber a qué backend conectarse.
 
 ```sh
-VITE_BACKEND_URL="http://localhost:4567"
+VITE_BACKEND_URL=http://localhost:4567
 ```
 
 Esto es en general una práctica común en desarrollo. Recuerda que `yarn build` en el proyecto del frontend compilará todo el código del frontend y sustituirá todas las ocurrencias de la variable `VITE_BACKEND_URL` por su valor literal, `http://localhost:4567`. Por lo tanto, es sumamente importante que la dirección del backend nunca la "hardcodees". Es decir, jamás escribir `http://localhost:4567` en el código Javascript, usa en vez de eso una variable de entorno como `VITE_BACKEND_URL`. Así, la URL de backend puede ser incorporada al código de producción del frontend en tiempo flexible durante la compilación.
@@ -19,7 +19,7 @@ Luego, si no has configurado la API key de OpenWeatherMap, puedes hacerlo tambi�
 Actualiza el archivo `.env` en el directorio `/frontend` de este repositorio para contener las líneas de configuración siguientes:
 
 ```sh
-VITE_BACKEND_URL="http://localhost:4567"
+VITE_BACKEND_URL=http://localhost:4567
 VITE_OPENWEATHER_API_KEY=#[copia y pega aquí la API Key y elimina los corchetes y el caracter gato]
 ```
 
