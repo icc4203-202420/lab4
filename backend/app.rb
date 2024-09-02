@@ -91,8 +91,8 @@ class Backend < Sinatra::Base
     end
   end
 
-  # Maneja tanto PUT como POST en /favorites
-  put '/favorites' do
+  # Método compartido para manejar POST y PUT en /favorites
+  def handle_favorites_update
     protected!
     user = authorized_user
 
@@ -105,7 +105,14 @@ class Backend < Sinatra::Base
     end
   end
 
-  post '/favorites', &self.method(:put_favorites)
+  # Manejo de POST y PUT utilizando el método compartido
+  post '/favorites' do
+    handle_favorites_update
+  end
+
+  put '/favorites' do
+    handle_favorites_update
+  end
 
   get '/favorites' do
     protected!
