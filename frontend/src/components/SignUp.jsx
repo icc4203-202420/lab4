@@ -26,7 +26,7 @@ const initialValues = {
 // Configuración de axios con axios-hooks
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
 
-const RegistrationForm = ({ tokenHandler }) => {
+const RegistrationForm = () => {
   const [serverError, setServerError] = useState(''); // Estado para manejar el error del servidor
   const navigate = useNavigate(); // Hook para manejar la navegación
 
