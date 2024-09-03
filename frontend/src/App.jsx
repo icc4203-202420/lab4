@@ -7,12 +7,15 @@ import HomeIcon from '@mui/icons-material/Home';
 import SearchIcon from '@mui/icons-material/Search';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import Home from './components/Home';
 import Search from './components/Search';
 import LoginForm from './components/Login';
+import RegistrationForm from './components/SignUp';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
 
 // Definir el reducer para manejar la lista de favoritos
 const favoritesReducer = (state, action) => {
@@ -47,9 +50,12 @@ function App() {
   const [favorites, dispatchFavorites] = useReducer(favoritesReducer, initialFavorites);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    const pathNoAuth = ['/login', '/signup'];
+    if (!isAuthenticated && !pathNoAuth.includes(location.pathname)) {
       navigate('/login');
     }
   });
@@ -161,12 +167,22 @@ function App() {
       >
       <List>
         {!isAuthenticated ? (
+          <>
           <ListItem button component={Link} to="/login" onClick={toggleDrawer}>
             <ListItemIcon>
               <LoginIcon />
             </ListItemIcon>
             <ListItemText primary="Iniciar Sesión" />
           </ListItem>
+          
+          <ListItem button component={Link} to="/signup" onClick={toggleDrawer}>
+            <ListItemIcon>
+                <AppRegistrationIcon />
+              </ListItemIcon>
+              <ListItemText primary="Crear cuenta" />
+          </ListItem>
+          </>
+
         ) : (
           <>
             <ListItem>
@@ -198,6 +214,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home favorites={favorites} removeFavorite={handleRemoveFavorite} />} />
         <Route path="/login" element={<LoginForm tokenHandler={handleJWT} />} />
+        <Route path="/signup" element={<RegistrationForm />} />
         <Route path="/search" element={<Search isFavorite={isFavorite} onAddFavorite={handleAddFavorite} />} />
       </Routes>
     </>    

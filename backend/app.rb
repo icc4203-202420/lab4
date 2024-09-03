@@ -91,6 +91,19 @@ class Backend < Sinatra::Base
     end
   end
 
+  post '/signup' do
+    email = params[:email]
+    password = params[:password]
+    name = params[:name]
+
+    if USERS[email]
+      halt 409, 'User already exists'
+    else
+      USERS[email] = { name: name, password: password, favorites: ["Talca"] }
+      status 201
+    end 
+  end
+
   # Método compartido para manejar POST y PUT en /favorites
   def handle_favorites_update
     protected!
